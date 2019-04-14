@@ -8,12 +8,14 @@ import { InMemoryCache } from "apollo-cache-inmemory";
 import { ApolloClient } from 'apollo-client';
 import { ApolloProvider } from 'react-apollo';
 
-import './index.css';
-import App from './App';
 import * as serviceWorker from './serviceWorker';
-import Login from "./components/Login";
 import {setContext} from "apollo-link-context";
 import {AUTh_TOKEN} from "./constants";
+
+import App from './App';
+import Login from "./components/Login";
+import Logout from "./components/Logout";
+import './index.css';
 
 const APP_BASE_URL = "http://localhost:8080/graphql";
 
@@ -44,6 +46,7 @@ ReactDOM.render(
       <React.Fragment>
         <Route exact path="/" component={App} />
         <Route path="/login" component={Login} />
+        <Route path="/logout" component={Logout} />
       </React.Fragment>
     </BrowserRouter>
   </ApolloProvider>,
