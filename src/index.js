@@ -30,7 +30,7 @@ ReactDOM.render(
   <ApolloProvider client={client}>
     <BrowserRouter>
       <React.Fragment>
-        <Route exact="/" component={App} />
+        <Route exact path="/" component={App} />
         <Route path="/login" component={Login} />
       </React.Fragment>
     </BrowserRouter>
