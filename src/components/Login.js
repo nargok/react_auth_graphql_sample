@@ -47,13 +47,14 @@ class Login extends Component {
           variables={{ name, password }}
           onCompleted={data => this._confirm(data)}
         >
-          {
-            mutation => (
+          {(mutation, { loading, error }) => (
+            <div>
               <button onClick={mutation}>
                 ログインする
               </button>
-            )
-          }
+              {error && <p>エラーが発生しました</p>}
+            </div>
+          )}
         </Mutation>
       </div>
     )
