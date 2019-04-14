@@ -12,6 +12,8 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import Login from "./components/Login";
+import {setContext} from "apollo-link-context";
+import {AUTh_TOKEN} from "./constants";
 
 const APP_BASE_URL = "http://localhost:8080/graphql";
 
@@ -19,10 +21,20 @@ const httpLink = new HttpLink({
   uri: APP_BASE_URL,
 });
 
+const authLink = setContext((_, { headers }) => {
+  const token = localStorage.getItem(AUTh_TOKEN);
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? token : ''
+    }
+  }
+});
+
 const cache = new InMemoryCache();
 
 const client = new ApolloClient({
-  link: httpLink,
+  link: authLink.concat(httpLink),
   cache,
 });
 
