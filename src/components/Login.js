@@ -46,13 +46,18 @@ class Login extends Component {
           mutation={OBTAIN_TOKEN}
           variables={{ name, password }}
           onCompleted={data => this._confirm(data)}
+          errorPolicy="all"
         >
           {(mutation, { loading, error }) => (
             <div>
               <button onClick={mutation}>
                 ログインする
               </button>
-              {error && <p>エラーが発生しました</p>}
+              {error &&
+                error.graphQLErrors.map(({message, extensions}) => console.log(extensions))
+                // DRFで返すメッセージの階層までたどる
+                // console.log("GraphQLError: " + error.graphQLErrors[0].extensions.response.body.non_field_errors[0])
+              }
             </div>
           )}
         </Mutation>
