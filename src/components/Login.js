@@ -1,4 +1,16 @@
 import React, { Component } from 'react';
+import gql from 'graphql-tag';
+import { Mutation } from 'react-apollo';
+import { AUTh_TOKEN } from "../constants";
+
+const OBTAIN_TOKEN = gql`
+  mutation getAuthToken($name: String!, $password: String!){
+    obtainToken(username: $name, password: $password) {
+      token
+    }
+  }
+`;
+
 
 class Login extends Component {
   state = {
@@ -30,12 +42,33 @@ class Login extends Component {
                  onChange={ event => this.handleChangePassword(event.target.value) }
           />
         </div>
-        <button>
-          ログインする
-        </button>
+        <Mutation
+          mutation={OBTAIN_TOKEN}
+          variables={{ name, password }}
+          onCompleted={data => this._confirm(data)}
+        >
+          {
+            mutation => (
+              <button onClick={mutation}>
+                ログインする
+              </button>
+            )
+          }
+        </Mutation>
       </div>
     )
   }
+
+  _confirm = async data => {
+    const { token } = data.obtainToken;
+    this._saveUserData(token);
+    this.props.history.push('/');
+  };
+
+  _saveUserData = token => {
+    localStorage.setItem(AUTh_TOKEN, token);
+  };
+
 };
 
 export default Login;

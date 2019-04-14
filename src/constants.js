@@ -1,0 +1,1 @@
+export const AUTh_TOKEN='auth-token';
