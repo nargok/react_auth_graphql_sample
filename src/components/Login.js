@@ -45,21 +45,23 @@ class Login extends Component {
         <Mutation
           mutation={OBTAIN_TOKEN}
           variables={{ name, password }}
+          onError={(error) => this._displayError(error)}
           onCompleted={data => this._confirm(data)}
         >
-          {
-            mutation => (
+          {(mutation, { loading, error }) => (
+            <div>
               <button onClick={mutation}>
                 ログインする
               </button>
-            )
-          }
+              { error && <p>ユーザIDまたはパスワードが間違っています</p> }
+            </div>
+          )}
         </Mutation>
       </div>
     )
   }
 
-  _confirm = async data => {
+  _confirm = data => {
     const { token } = data.obtainToken;
     this._saveUserData(token);
     this.props.history.push('/');
@@ -67,6 +69,12 @@ class Login extends Component {
 
   _saveUserData = token => {
     localStorage.setItem(AUTh_TOKEN, token);
+  };
+
+  _displayError = (error) => {
+    console.log("GraphQLError: " + error.graphQLErrors[0].extensions.code);
+    console.log("GraphQLError: " + error.graphQLErrors[0].message);
+    alert("ユーザID、またはパスワードが間違っています");
   };
 
 };
