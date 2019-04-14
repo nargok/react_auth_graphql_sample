@@ -7,6 +7,8 @@ import { HttpLink } from 'apollo-link-http';
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { ApolloClient } from 'apollo-client';
 import { ApolloProvider } from 'react-apollo';
+import { onError } from "apollo-link-error";
+import { ApolloLink } from "apollo-link";
 
 import * as serviceWorker from './serviceWorker';
 import {setContext} from "apollo-link-context";
@@ -33,10 +35,36 @@ const authLink = setContext((_, { headers }) => {
   }
 });
 
+const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
+  if (graphQLErrors) {
+    for (let err of graphQLErrors) {
+      switch (err.extensions.code) {
+        case 'BAD_USER_INPUT':
+          console.log("もう一度入力内容を確認させよう");
+          break;
+        case 'UNAUTHENTICATED':
+          const headers = operation.getContext().headers;
+          operation.setContext({
+            headers: {
+              ...headers,
+              authorization: getNewToken(),
+            }
+          });
+
+          //
+          return forward(operation);
+        default:
+      }
+    }
+  }
+  if (networkError) console.log(`[Network error]: ${networkError}`);
+});
+
 const cache = new InMemoryCache();
 
 const client = new ApolloClient({
-  link: authLink.concat(httpLink),
+  // errorLink, authLink, httpLinkの順番じゃないと適用できない
+  link: ApolloLink.from([errorLink, authLink, httpLink]),
   cache,
 });
 
@@ -56,3 +84,8 @@ ReactDOM.render(
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();
+
+// TODO 新しいtokenを取得する処理を実装する
+const getNewToken = () => {
+  return "ちょっとまってね"
+};
