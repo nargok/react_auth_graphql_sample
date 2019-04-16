@@ -20,6 +20,10 @@ import Logout from "./components/Logout";
 import './index.css';
 import UserList from "./components/UserListFromOtherService";
 
+import gql from 'graphql-tag';
+import { print } from 'graphql';
+import axios from 'axios';
+
 const APP_BASE_URL = "http://localhost:8080/graphql";
 
 const httpLink = new HttpLink({
@@ -87,7 +91,23 @@ ReactDOM.render(
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();
 
+const TOKEN_REFRESH = gql`
+  mutation refreshToken($token: String!) {
+    refreshToken(refresh: $token) {
+      access
+    }
+  }
+`;
+
 // TODO 新しいtokenを取得する処理を実装する
-const getNewToken = () => {
-  return "ちょっとまってね"
+const getNewToken = async () => {
+  // TODO localstrageからrefreshtokenを取得するようにする
+  const token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTU1NTQxNTc3NiwianRpIjoiODlkMmIxODEyOWQ3NDQwNzljNDI3ZTU0NjhhOTZmOTkiLCJ1c2VyX2lkIjoxfQ.mZrm4ErzD9QkvdPq9ndORaaclXRT5J2gMpeXOShHszc";
+  const res = await axios.post(APP_BASE_URL, {
+    query: print(TOKEN_REFRESH),
+    variables: { token: token } }
+  );
+  const newAccessToekn = res.data.data.refreshToken.access;
+  console.log("NewTokenを取るよ" + newAccessToekn);
+  return newAccessToekn;
 };
