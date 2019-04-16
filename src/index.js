@@ -18,6 +18,7 @@ import App from './App';
 import Login from "./components/Login";
 import Logout from "./components/Logout";
 import './index.css';
+import UserList from "./components/UserListFromOtherService";
 
 const APP_BASE_URL = "http://localhost:8080/graphql";
 
@@ -75,6 +76,7 @@ ReactDOM.render(
         <Route exact path="/" component={App} />
         <Route path="/login" component={Login} />
         <Route path="/logout" component={Logout} />
+        <Route path="/users" component={UserList} />
       </React.Fragment>
     </BrowserRouter>
   </ApolloProvider>,
