@@ -44,6 +44,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
           console.log("もう一度入力内容を確認させよう");
           break;
         case 'UNAUTHENTICATED':
+          console.log("ここで新しいtokenを取得して再実行する");
           const headers = operation.getContext().headers;
           operation.setContext({
             headers: {
@@ -51,8 +52,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
               authorization: getNewToken(),
             }
           });
-
-          //
+          // 新しいアクセストークンを使って、認証エラーになった処理を再実行する
           return forward(operation);
         default:
       }
