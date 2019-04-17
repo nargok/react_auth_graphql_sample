@@ -59,6 +59,7 @@ const errorLink = onError(async ({ graphQLErrors, networkError, operation, forwa
           // 新しいアクセストークンを使って、認証エラーになった処理を再実行する
             console.log({headers});
           return forward(operation);
+        // TODO リフレッシュトークンがexpireになったときの制御を追加
         default:
       }
     }
