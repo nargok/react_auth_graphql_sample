@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
 import gql from 'graphql-tag';
 import { Mutation } from 'react-apollo';
-import { AUTh_TOKEN } from "../constants";
+import { AUTh_TOKEN, REFRESH_TOKEN } from "../constants";
 
 const OBTAIN_TOKEN = gql`
   mutation getAuthToken($name: String!, $password: String!){
     obtainToken(username: $name, password: $password) {
-      token
+      access
+      refresh
     }
   }
 `;
@@ -62,13 +63,14 @@ class Login extends Component {
   }
 
   _confirm = data => {
-    const { token } = data.obtainToken;
-    this._saveUserData(token);
+    const { access, refresh } = data.obtainToken;
+    this._saveUserData(access, refresh);
     this.props.history.push('/');
   };
 
-  _saveUserData = token => {
-    localStorage.setItem(AUTh_TOKEN, token);
+  _saveUserData = (access, refresh) => {
+    localStorage.setItem(AUTh_TOKEN, access);
+    localStorage.setItem(REFRESH_TOKEN, refresh);
   };
 
   _displayError = (error) => {

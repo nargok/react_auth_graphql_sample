@@ -18,6 +18,11 @@ import App from './App';
 import Login from "./components/Login";
 import Logout from "./components/Logout";
 import './index.css';
+import UserList from "./components/UserListFromOtherService";
+
+import gql from 'graphql-tag';
+import { print } from 'graphql';
+import axios from 'axios';
 
 const APP_BASE_URL = "http://localhost:8080/graphql";
 
@@ -35,7 +40,7 @@ const authLink = setContext((_, { headers }) => {
   }
 });
 
-const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
+const errorLink = onError(async ({ graphQLErrors, networkError, operation, forward }) => {
   if (graphQLErrors) {
     for (let err of graphQLErrors) {
       switch (err.extensions.code) {
@@ -43,16 +48,18 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
           console.log("もう一度入力内容を確認させよう");
           break;
         case 'UNAUTHENTICATED':
+          console.log("ここで新しいtokenを取得して再実行する");
           const headers = operation.getContext().headers;
           operation.setContext({
             headers: {
               ...headers,
-              authorization: getNewToken(),
+              authorization: await getNewToken(),
             }
           });
-
-          //
+          // 新しいアクセストークンを使って、認証エラーになった処理を再実行する
+            console.log({headers});
           return forward(operation);
+        // TODO リフレッシュトークンがexpireになったときの制御を追加
         default:
       }
     }
@@ -75,6 +82,7 @@ ReactDOM.render(
         <Route exact path="/" component={App} />
         <Route path="/login" component={Login} />
         <Route path="/logout" component={Logout} />
+        <Route path="/users" component={UserList} />
       </React.Fragment>
     </BrowserRouter>
   </ApolloProvider>,
@@ -85,7 +93,24 @@ ReactDOM.render(
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();
 
+const TOKEN_REFRESH = gql`
+  mutation refreshToken($token: String!) {
+    refreshToken(refresh: $token) {
+      access
+    }
+  }
+`;
+
 // TODO 新しいtokenを取得する処理を実装する
-const getNewToken = () => {
-  return "ちょっとまってね"
+const getNewToken = async () => {
+  // TODO localstrageからrefreshtokenを取得するようにする
+  // const token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTU1NTQxNTc3NiwianRpIjoiODlkMmIxODEyOWQ3NDQwNzljNDI3ZTU0NjhhOTZmOTkiLCJ1c2VyX2lkIjoxfQ.mZrm4ErzD9QkvdPq9ndORaaclXRT5J2gMpeXOShHszc";
+  // const res = await axios.post(APP_BASE_URL, {
+  //   query: print(TOKEN_REFRESH),
+  //   variables: { token: token } }
+  // );
+  // const newAccessToekn = res.data.data.refreshToken.access;
+  // console.log("NewTokenを取るよ" + newAccessToekn);
+  // return newAccessToekn;
+  // ちょっとまってね
 };
