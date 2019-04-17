@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
-import {AUTh_TOKEN} from "../constants";
-
+import {AUTh_TOKEN, REFRESH_TOKEN} from "../constants";
 
 class Logout extends Component {
   render () {
@@ -20,6 +19,7 @@ class Logout extends Component {
   };
   _removeUserData = () => {
     localStorage.removeItem(AUTh_TOKEN);
+    localStorage.removeItem(REFRESH_TOKEN);
   };
 }
 
