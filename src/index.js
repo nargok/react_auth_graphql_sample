@@ -40,7 +40,7 @@ const authLink = setContext((_, { headers }) => {
   }
 });
 
-const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
+const errorLink = onError(async ({ graphQLErrors, networkError, operation, forward }) => {
   if (graphQLErrors) {
     for (let err of graphQLErrors) {
       switch (err.extensions.code) {
@@ -53,10 +53,11 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
           operation.setContext({
             headers: {
               ...headers,
-              authorization: getNewToken(),
+              authorization: await getNewToken(),
             }
           });
           // 新しいアクセストークンを使って、認証エラーになった処理を再実行する
+            console.log({headers});
           return forward(operation);
         default:
       }
@@ -102,12 +103,13 @@ const TOKEN_REFRESH = gql`
 // TODO 新しいtokenを取得する処理を実装する
 const getNewToken = async () => {
   // TODO localstrageからrefreshtokenを取得するようにする
-  const token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTU1NTQxNTc3NiwianRpIjoiODlkMmIxODEyOWQ3NDQwNzljNDI3ZTU0NjhhOTZmOTkiLCJ1c2VyX2lkIjoxfQ.mZrm4ErzD9QkvdPq9ndORaaclXRT5J2gMpeXOShHszc";
-  const res = await axios.post(APP_BASE_URL, {
-    query: print(TOKEN_REFRESH),
-    variables: { token: token } }
-  );
-  const newAccessToekn = res.data.data.refreshToken.access;
-  console.log("NewTokenを取るよ" + newAccessToekn);
-  return newAccessToekn;
+  // const token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTU1NTQxNTc3NiwianRpIjoiODlkMmIxODEyOWQ3NDQwNzljNDI3ZTU0NjhhOTZmOTkiLCJ1c2VyX2lkIjoxfQ.mZrm4ErzD9QkvdPq9ndORaaclXRT5J2gMpeXOShHszc";
+  // const res = await axios.post(APP_BASE_URL, {
+  //   query: print(TOKEN_REFRESH),
+  //   variables: { token: token } }
+  // );
+  // const newAccessToekn = res.data.data.refreshToken.access;
+  // console.log("NewTokenを取るよ" + newAccessToekn);
+  // return newAccessToekn;
+  // ちょっとまってね
 };
