@@ -35,7 +35,7 @@ const authLink = setContext((_, { headers }) => {
   return {
     headers: {
       ...headers,
-      authorization: token ? token : ''
+      authorization: token ? `Bearer ${token}` : ''
     }
   }
 });
@@ -63,9 +63,9 @@ const errorLink = onError( ({ graphQLErrors, networkError, operation, forward })
                     // アクセストークンの入れ替え
                     operation.setContext({
                         ...oldHeaders,
-                        authorization: newAccessToken,
+                        authorization: `Bearer ${newAccessToken}`,
                     })
-                    console.log(operation)
+                    console.log({operation})
                 }).then(() => {
                     const subscriber = {
                         next: observer.next.bind(observer),
