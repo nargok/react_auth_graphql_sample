@@ -24,6 +24,8 @@ import gql from 'graphql-tag';
 import { print } from 'graphql';
 import axios from 'axios';
 
+import { getNewToken } from "./getNewToken";
+
 const APP_BASE_URL = "http://localhost:8080/graphql";
 
 const httpLink = new HttpLink({
@@ -40,32 +42,24 @@ const authLink = setContext((_, { headers }) => {
   }
 });
 
-const errorLink = onError( ({ graphQLErrors, networkError, operation, forward }) => {
+const errorLink = onError(  ({ graphQLErrors, networkError, operation, forward }) => {
   if (graphQLErrors) {
     for (let err of graphQLErrors) {
       switch (err.extensions.code) {
         case 'BAD_USER_INPUT':
           console.log("もう一度入力内容を確認させよう");
           break;
-        case 'UNAUTHENTICATED':
+          case 'UNAUTHENTICATED':
           // if (localStorage.getItem(AUTh_TOKEN) && localStorage.getItem(REFRESH_TOKEN)) {
             console.log("ここで新しいtokenを取得して再実行する");
-            const refreshToken = localStorage.getItem(REFRESH_TOKEN);
-            const oldHeaders = operation.getContext().headers;
-            console.log(oldHeaders);
             return new Observable(observer => {
-                axios.post(APP_BASE_URL, {
-                    query: print(TOKEN_REFRESH),
-                    variables: { token: refreshToken }}
-                ).then(response => {
-                    const newAccessToken = response.data.data.refreshToken.access;
-                    console.log("新しいアクセストークン: " + newAccessToken);
-                    // アクセストークンの入れ替え
-                    operation.setContext({
-                        ...oldHeaders,
-                        authorization: `Bearer ${newAccessToken}`,
-                    })
-                    console.log({operation})
+                getNewToken().then(newAccessToken => {
+                    operation.setContext(({ headers = {}}) => ({
+                        headers: {
+                            ...headers,
+                            authorization: `Bearer ${newAccessToken}` || null,
+                        }
+                    }))
                 }).then(() => {
                     const subscriber = {
                         next: observer.next.bind(observer),
@@ -73,14 +67,73 @@ const errorLink = onError( ({ graphQLErrors, networkError, operation, forward })
                         complete: observer.complete.bind(observer)
                     };
                     // Retry last failed request
-                    // 失敗したリクエストをもう一度実行
-                    forward(operation).subscribe(subscriber)
-                }).catch(error => {
+                    forward(operation).subscribe(subscriber);
+                })
+                .catch(error => {
                     // No refresh or client token available, we force user to login
-                    // リフレッシュトークンが切れているので再ログインが必要
                     observer.error(error)
                 })
             })
+
+            // TODO 一度封印
+            // getNewToken().then(token => {
+            //     console.log("newToken is :" + token)
+            //     // Todo 一旦ローカルストレージの更新をはずす
+            //     // localStorage.removeItem(AUTh_TOKEN);
+            //     // localStorage.setItem(AUTh_TOKEN, token);
+            //     operation.setContext({
+            //         headers: {
+            //             ...oldHeaders,
+            //             authorization: `Bearer ${token}`
+            //             // authorization: `Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNTU1NTc0NTYxLCJqdGkiOiJhNDc5MjhkYTIwYWM0ZjI1OTAyMTcyZDBiNWFmMTY2NiIsInVzZXJfaWQiOjEsIm5hbWUiOiJhZG1pbiIsImlzX3N1cGVydXNlciI6dHJ1ZX0.QBx0txf46_QPqo0zoOGwbW-TO_4S51HpeC1QZ3WSApg`
+            //         }
+            //     });
+            //     console.log(operation.getContext().headers)
+            //     return forward(operation);
+            // })
+            // console.log(newToken)
+            // operation.setContext({
+            //     headers: {
+            //         ...oldHeaders,
+            //         // TODO　ここのreturnがundefinedになる これがPromiseか？？
+            //         // authorization: `Bearer ${getNewToken().then(access => access )}`
+            //         // authorization: `Bearer ${newToken}`
+            //         // authorization: `Bearer ${getNewToken()}`
+            //         // authorization: `Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNTU1NTYzMzk3LCJqdGkiOiI3YTU3YWI0YmViYjM0OWNlOWFkNGVmM2ZmMTg4NmQ3ZiIsInVzZXJfaWQiOjEsIm5hbWUiOiJhZG1pbiIsImlzX3N1cGVydXNlciI6dHJ1ZX0.4rRMM0zSELFZL5lepkz0zFzZe7Bs_GVIS-XFuRanRjY`
+            //     }
+            // });
+            // console.log(operation.getContext().headers);
+
+
+
+            // 一旦コメントアウト
+            // return new Observable(observer => {
+            //     getNewToken().then(response => {
+            //         const newAccessToken = response.data.data.refreshToken.access;
+            //         console.log("新しいアクセストークン: " + newAccessToken);
+            //         // アクセストークンの入れ替え
+            //         operation.setContext({
+            //             headers: {
+            //                 ...oldHeaders,
+            //                 authorization: `Bearer ${newAccessToken}`,
+            //             }
+            //         })
+            //         console.log(operation.getContext().headers)
+            //     }).then(() => {
+            //         const subscriber = {
+            //             next: observer.next.bind(observer),
+            //             error: observer.error.bind(observer),
+            //             complete: observer.complete.bind(observer)
+            //         };
+            //         // Retry last failed request
+            //         // 失敗したリクエストをもう一度実行
+            //         forward(operation).subscribe(subscriber)
+            //     }).catch(error => {
+            //         // No refresh or client token available, we force user to login
+            //         // リフレッシュトークンが切れているので再ログインが必要
+            //         observer.error(error)
+            //     })
+            // })
 
             // const oldHeaders = operation.getContext().headers;
             // const promise = getNewTokenPromise();
@@ -95,13 +148,23 @@ const errorLink = onError( ({ graphQLErrors, networkError, operation, forward })
             //   });
             //   return forward(operation);
             // });
+
+                  // operation.setContext({
+                  //     headers: {
+                  //         ...oldHeaders,
+                  //         authorization: `Bearer ${token}`
+                  //         // authorization: `Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNTU1NTc0NTYxLCJqdGkiOiJhNDc5MjhkYTIwYWM0ZjI1OTAyMTcyZDBiNWFmMTY2NiIsInVzZXJfaWQiOjEsIm5hbWUiOiJhZG1pbiIsImlzX3N1cGVydXNlciI6dHJ1ZX0.QBx0txf46_QPqo0zoOGwbW-TO_4S51HpeC1QZ3WSApg`
+                  //     }
+                  // });
+
+
             // return new Observable(observer => {
             //   getNewToken().then(newAccessToken => {
             //     console.log("新しいアクセストークン: " + newAccessToken);
             //     operation.setContext({
             //       headers: {
-            //         ...headers,
-            //         authorization: newAccessToken,
+            //         ...oldHeaders,
+            //         authorization: `Bearer ${newAccessToken}`,
             //       }
             //   }).then(() => {
             //      const subscriber = {
@@ -109,7 +172,7 @@ const errorLink = onError( ({ graphQLErrors, networkError, operation, forward })
             //        error: observer.error.bind(observer),
             //        complete: observer.complete.bind(observer)
             //      };
-            //       console.log({headers});
+            //       console.log({oldHeaders});
             //       // 新しいアクセストークンを使って、認証エラーになった処理を再実行する
             //       return forward(subscriber);
             //     }).catch(error => {
@@ -117,7 +180,6 @@ const errorLink = onError( ({ graphQLErrors, networkError, operation, forward })
             //     })
             //   })
             // });
-          // }
           // break;
         // TODO リフレッシュトークンがexpireになったときの制御を追加
         default:
@@ -131,7 +193,7 @@ const cache = new InMemoryCache();
 
 const client = new ApolloClient({
   // errorLink, authLink, httpLinkの順番じゃないと適用できない
-  link: ApolloLink.from([errorLink, authLink, httpLink]),
+  link: ApolloLink.from([authLink, errorLink, httpLink]),
   cache,
 });
 
@@ -169,17 +231,21 @@ const getNewTokenPromise = () => {
   });
 };
 
-const getNewToken = () => {
-  const refreshToken = localStorage.getItem(REFRESH_TOKEN);
-  const res = axios.post(APP_BASE_URL, {
-    query: print(TOKEN_REFRESH),
-    variables: { token: refreshToken } }
-  );
-  const newAccessToekn = res.data.data.refreshToken.access;
-  // console.log("NewTokenを取るよ" + newAccessToekn);
-  // return newAccessToekn;
-  // return "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNTU1NDgxNzI5LCJqdGkiOiI4MTM3NTI5ZDYxNjk0MjZjODFjNGUzNjM0MDM4OThlZiIsInVzZXJfaWQiOjF9.I0WVkZV3pzJNbwI4DoRl_sIpEWO1HFjWwy6gudnXtNc"
-}
+// const getNewToken = () => {
+//   const refreshToken = localStorage.getItem(REFRESH_TOKEN);
+//   axios.post(APP_BASE_URL, {
+//     query: print(TOKEN_REFRESH),
+//     variables: { token: refreshToken } }
+//   ).then(res => {
+//       const newAccessToken = res.data.data.refreshToken.access;
+//       console.log(newAccessToken);
+//       return newAccessToken;
+//   });
+//
+//   // console.log("NewTokenを取るよ" + newAccessToekn);
+//   // return newAccessToekn;
+//   // return "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNTU1NDgxNzI5LCJqdGkiOiI4MTM3NTI5ZDYxNjk0MjZjODFjNGUzNjM0MDM4OThlZiIsInVzZXJfaWQiOjF9.I0WVkZV3pzJNbwI4DoRl_sIpEWO1HFjWwy6gudnXtNc"
+// }
 
 const promiseToObservable = (promise) => {
   return new Observable((subscriber) => {
