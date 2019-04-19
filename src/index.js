@@ -19,11 +19,6 @@ import Login from "./components/Login";
 import Logout from "./components/Logout";
 import './index.css';
 import UserList from "./components/UserListFromOtherService";
-
-import gql from 'graphql-tag';
-import { print } from 'graphql';
-import axios from 'axios';
-
 import { getNewToken } from "./getNewToken";
 
 const APP_BASE_URL = "http://localhost:8080/graphql";
@@ -37,7 +32,7 @@ const authLink = setContext((_, { headers }) => {
   return {
     headers: {
       ...headers,
-      authorization: token ? `Bearer ${token}` : ''
+      authorization: token ? token : ''
     }
   }
 });
@@ -49,15 +44,14 @@ const errorLink = onError(  ({ graphQLErrors, networkError, operation, forward }
         case 'BAD_USER_INPUT':
           console.log("もう一度入力内容を確認させよう");
           break;
-          case 'UNAUTHENTICATED':
-          // if (localStorage.getItem(AUTh_TOKEN) && localStorage.getItem(REFRESH_TOKEN)) {
+        case 'UNAUTHENTICATED':
             console.log("ここで新しいtokenを取得して再実行する");
             return new Observable(observer => {
                 getNewToken().then(newAccessToken => {
                     operation.setContext(({ headers = {}}) => ({
                         headers: {
                             ...headers,
-                            authorization: `Bearer ${newAccessToken}` || null,
+                            authorization: newAccessToken || null,
                         }
                     }));
                     localStorage.removeItem(AUTh_TOKEN);

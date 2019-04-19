@@ -22,11 +22,5 @@ export const getNewToken = () => {
             }
         ).then(res => resolve(res.data.data.refreshToken.access))
             .catch(error => reject(error))
-        // const newAccessToken = res.data.data.refreshToken.access;
-        // console.log(newAccessToken);
-        // return newAccessToken;
     })
-}
-//         });
-//     })
-// };
+};
